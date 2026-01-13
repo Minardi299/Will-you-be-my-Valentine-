@@ -19,7 +19,7 @@
         { sprite: ['><(((º>'], color: colors.fish1, weight: 14 },
         { sprite: ['><(((º>'], color: colors.fish2, weight: 10 },
         { sprite: ['><(((º>'], color: colors.fish3, weight: 10 },
-        { sprite: ['><>'], color: colors.fish2, weight: 16 },
+        { sprite: ['>()'], color: colors.fish2, weight: 16 },
         { sprite: ['><>'], color: colors.fish1, weight: 10 },
         { sprite: ['><>'], color: colors.fish3, weight: 10 },
 
@@ -71,32 +71,17 @@
             forceDirection: 1
         },
         {
-            // "` (')< ,,"
-            // From example.html:
-            //   ", "
-            //   "<>< "
-            //   "` "
-            sprite: [
-                ', ',
-                '<>< ',
-                '` '
-            ],
-            color: colors.fish3,
-            weight: 3
-        },
-        {
             // "/ ,'`./ `.,'\\ \\" (orange multi-line)
             sprite: [
-                '/',
+                '  /',
                 ",'`./ ",
                 "`.,'\\ ",
-                '\\'
+                '  \\'
             ],
             color: colors.fish1,
             weight: 2,
-            // Keep exact look from example.html (no auto-mirroring)
-            noMirror: true,
-            forceDirection: 1
+            
+            faces: -1
         },
         {
             // "_\_\/ -( / )-" (2-line)
@@ -110,18 +95,18 @@
             noMirror: true,
             forceDirection: 1
         },
-        {
-            // "@ . .@. . .:@ ..: .:. :. @:: .:. ':::.:' ':':" (multi-line)
-            sprite: [
-                '@ . .@. ',
-                '. .:@ ..: .:. ',
-                ':. @:: .:. ',
-                "':::.:' ",
-                "':': "
-            ],
-            color: colors.seaweed,
-            weight: 1
-        }
+        // {
+        //     // "@ . .@. . .:@ ..: .:. :. @:: .:. ':::.:' ':':" (multi-line)
+        //     sprite: [
+        //         '@ . .@. ',
+        //         '. .:@ ..: .:. ',
+        //         ':. @:: .:. ',
+        //         "':::.:' ",
+        //         "':': "
+        //     ],
+        //     color: colors.seaweed,
+        //     weight: 1
+        // }
     ];
 
     function pickFishPattern() {
@@ -273,7 +258,15 @@
             const pattern = pickFishPattern();
             const spriteRight = Array.isArray(pattern.sprite) ? pattern.sprite : [String(pattern.sprite)];
             const right = spriteToCells(spriteRight);
-            const leftCells = pattern.noMirror ? right.cells : flipCellsHoriz(right.cells, right.width);
+            // By default, we assume the provided sprite is facing RIGHT.
+            // If a sprite is authored facing LEFT (faces: -1), we swap the forward/backward cells.
+            let forwardCells = right.cells;
+            let backwardCells = pattern.noMirror ? right.cells : flipCellsHoriz(right.cells, right.width);
+            if (pattern.faces === -1 && !pattern.noMirror) {
+                const tmp = forwardCells;
+                forwardCells = backwardCells;
+                backwardCells = tmp;
+            }
             const width = right.width;
             const height = right.height;
 
@@ -285,8 +278,8 @@
             fish.push({
                 x: Math.random() * Math.max(1, (cols - Math.max(1, width))),
                 y: 1 + Math.random() * Math.max(1, (rows - height - 2)),
-                cellsRight: right.cells,
-                cellsLeft: leftCells,
+                cellsRight: forwardCells,
+                cellsLeft: backwardCells,
                 width,
                 height,
                 color: pattern.color,
