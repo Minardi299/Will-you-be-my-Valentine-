@@ -13,14 +13,182 @@
     };
 
     // Fish patterns
+    // Multi-line sprites are taken from `example.html` (Framer export) and rendered as swimmers.
     const fishPatterns = [
-        ['><(((º>', colors.fish1],
-        ['><>', colors.fish2],
-        ['><>', colors.fish3],
-        ['><(((º>', colors.fish2],
-        ['><>', colors.fish1],
-        ['><(((º>', colors.fish3]
+        // Small fish
+        { sprite: ['><(((º>'], color: colors.fish1, weight: 14 },
+        { sprite: ['><(((º>'], color: colors.fish2, weight: 10 },
+        { sprite: ['><(((º>'], color: colors.fish3, weight: 10 },
+        { sprite: ['><>'], color: colors.fish2, weight: 16 },
+        { sprite: ['><>'], color: colors.fish1, weight: 10 },
+        { sprite: ['><>'], color: colors.fish3, weight: 10 },
+
+        // Multi-line creatures from example.html
+        {
+            // ". \_____)\_____ /--v____ __`< )/"
+            sprite: [
+                '      .',
+                '\\_____)\\_____ ',
+                '/--v____ __`< ',
+                '        )/'
+            ],
+            color: colors.fish2,
+            weight: 2,
+            forceDirection: 1
+        },
+        {
+            // "_\_  \\/ o\ .  //\___=  ''"
+            sprite: [
+                '   _\\_  ',
+                '\\\\/ o \\ .',
+                '//\\___= ',
+                "   ''   "
+            ],
+            color: colors.fish3,
+            weight: 3
+        },
+        {
+            // "`` ('_)< ,-," (orange duck variant)
+            sprite: [
+                ',,',
+                ">(')",
+                "''"
+            ],
+            color: colors.fish1,
+            weight: 3
+        },
+        {
+            // "`` ('_)< ,-," (blue duck variant)
+            sprite: [
+                ',-,',
+                "('_)< ",
+                '`-`'
+            ],
+            color: colors.fish2,
+            weight: 3,
+            // Keep exact look from example.html (no auto-mirroring)
+            noMirror: true,
+            forceDirection: 1
+        },
+        {
+            // "` (')< ,,"
+            // From example.html:
+            //   ", "
+            //   "<>< "
+            //   "` "
+            sprite: [
+                ', ',
+                '<>< ',
+                '` '
+            ],
+            color: colors.fish3,
+            weight: 3
+        },
+        {
+            // "/ ,'`./ `.,'\\ \\" (orange multi-line)
+            sprite: [
+                '/',
+                ",'`./ ",
+                "`.,'\\ ",
+                '\\'
+            ],
+            color: colors.fish1,
+            weight: 2,
+            // Keep exact look from example.html (no auto-mirroring)
+            noMirror: true,
+            forceDirection: 1
+        },
+        {
+            // "_\_\/ -( / )-" (2-line)
+            sprite: [
+                '_\\_\\/',
+                '-( / )-'
+            ],
+            color: colors.coral,
+            weight: 2,
+            // Keep exact look from example.html (no auto-mirroring)
+            noMirror: true,
+            forceDirection: 1
+        },
+        {
+            // "@ . .@. . .:@ ..: .:. :. @:: .:. ':::.:' ':':" (multi-line)
+            sprite: [
+                '@ . .@. ',
+                '. .:@ ..: .:. ',
+                ':. @:: .:. ',
+                "':::.:' ",
+                "':': "
+            ],
+            color: colors.seaweed,
+            weight: 1
+        }
     ];
+
+    function pickFishPattern() {
+        const total = fishPatterns.reduce((sum, p) => sum + (p.weight ?? 1), 0);
+        let r = Math.random() * total;
+        for (const p of fishPatterns) {
+            r -= (p.weight ?? 1);
+            if (r <= 0) return p;
+        }
+        return fishPatterns[0];
+    }
+
+    function mirrorChar(ch) {
+        switch (ch) {
+            case '<': return '>';
+            case '>': return '<';
+            case '(': return ')';
+            case ')': return '(';
+            case '/': return '\\';
+            case '\\': return '/';
+            case '[': return ']';
+            case ']': return '[';
+            case '{': return '}';
+            case '}': return '{';
+            default: return ch;
+        }
+    }
+
+    // Convert an ASCII sprite (array of strings) into a compact list of "ink" cells.
+    // This makes flipping easy and avoids padding-space weirdness.
+    function spriteToCells(spriteLines) {
+        const cells = [];
+        let minX = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+
+        for (let y = 0; y < spriteLines.length; y++) {
+            const line = String(spriteLines[y] ?? '');
+            const chars = Array.from(line);
+            for (let x = 0; x < chars.length; x++) {
+                const ch = chars[x];
+                if (ch === ' ') continue;
+                cells.push({ x, y, ch });
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y > maxY) maxY = y;
+            }
+        }
+
+        if (cells.length === 0) {
+            return { cells: [], width: 0, height: 0 };
+        }
+
+        // Normalize to remove left padding.
+        for (const c of cells) c.x -= minX;
+
+        return {
+            cells,
+            width: maxX - minX + 1,
+            height: maxY + 1
+        };
+    }
+
+    // Flip "ink" cells horizontally within a bounding width, mirroring characters too.
+    function flipCellsHoriz(cells, width) {
+        return cells.map(c => ({ x: (width - 1) - c.x, y: c.y, ch: mirrorChar(c.ch) }));
+    }
 
     // Seaweed patterns
     const seaweedPatterns = [
@@ -99,17 +267,31 @@
     // Create fish
     function createFish() {
         fish = [];
-        const numFish = Math.floor((cols * rows) / 400);
+        // Cap to keep big multi-line sprites from overcrowding
+        const numFish = Math.max(6, Math.min(14, Math.floor((cols * rows) / 650)));
         for (let i = 0; i < numFish; i++) {
-            const pattern = fishPatterns[Math.floor(Math.random() * fishPatterns.length)];
+            const pattern = pickFishPattern();
+            const spriteRight = Array.isArray(pattern.sprite) ? pattern.sprite : [String(pattern.sprite)];
+            const right = spriteToCells(spriteRight);
+            const leftCells = pattern.noMirror ? right.cells : flipCellsHoriz(right.cells, right.width);
+            const width = right.width;
+            const height = right.height;
+
+            const speed = (Math.random() * 0.25) + 0.08;
+            const direction = (typeof pattern.forceDirection === 'number')
+                ? pattern.forceDirection
+                : (Math.random() > 0.5 ? 1 : -1);
+
             fish.push({
-                x: Math.random() * cols,
-                y: Math.random() * rows,
-                pattern: pattern[0],
-                color: pattern[1],
-                speed: (Math.random() * 0.3) + 0.1,
-                direction: Math.random() > 0.5 ? 1 : -1,
-                size: pattern[0].length,
+                x: Math.random() * Math.max(1, (cols - Math.max(1, width))),
+                y: 1 + Math.random() * Math.max(1, (rows - height - 2)),
+                cellsRight: right.cells,
+                cellsLeft: leftCells,
+                width,
+                height,
+                color: pattern.color,
+                speed,
+                direction,
                 waveOffset: Math.random() * Math.PI * 2
             });
         }
@@ -154,26 +336,32 @@
             f.x += f.speed * f.direction;
             
             // Bounce off edges
-            if (f.x < 0 || f.x > cols - f.size) {
-                f.direction *= -1;
-                f.x = Math.max(0, Math.min(cols - f.size, f.x));
+            if (f.x < 0 || f.x > cols - f.width) {
+                // If forced to move one direction (e.g. shark), wrap around instead of bouncing.
+                if (f.direction === 1 && f.x > cols) {
+                    f.x = -f.width;
+                } else if (f.direction === -1 && f.x < -f.width) {
+                    f.x = cols;
+                } else {
+                    f.direction *= -1;
+                    f.x = Math.max(0, Math.min(cols - f.width, f.x));
+                }
             }
 
             // Slight vertical movement (wave motion)
             f.y += Math.sin(time / 1000 + f.waveOffset) * 0.1;
-            f.y = Math.max(2, Math.min(rows - 2, f.y));
+            f.y = Math.max(1, Math.min(rows - f.height - 1, f.y));
 
             // Draw fish
             const y = Math.floor(f.y);
             const x = Math.floor(f.x);
-            if (y >= 0 && y < rows && x >= 0 && x < cols - f.size) {
-                for (let i = 0; i < f.pattern.length; i++) {
-                    if (x + i < cols) {
-                        grid[y][x + i] = {
-                            char: f.pattern[i],
-                            color: f.color
-                        };
-                    }
+            const cells = f.direction === 1 ? f.cellsRight : f.cellsLeft;
+            if (cells && cells.length) {
+                for (const c of cells) {
+                    const yy = y + c.y;
+                    const xx = x + c.x;
+                    if (yy < 0 || yy >= rows || xx < 0 || xx >= cols) continue;
+                    grid[yy][xx] = { char: c.ch, color: f.color };
                 }
             }
         });
