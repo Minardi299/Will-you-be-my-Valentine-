@@ -16,7 +16,7 @@
     // Multi-line sprites are taken from `example.html` (Framer export) and rendered as swimmers.
     const fishPatterns = [
         // Small fish
-        { sprite: ['><(((º>'], color: colors.fish1, weight: 14 },
+        { sprite: ['><maximº>'], color: colors.fish1, weight: 14 },
         { sprite: ['><(((º>'], color: colors.fish2, weight: 10 },
         { sprite: ['><(((º>'], color: colors.fish3, weight: 10 },
         { sprite: ['>()'], color: colors.fish2, weight: 16 },

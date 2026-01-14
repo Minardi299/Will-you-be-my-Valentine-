@@ -4,21 +4,46 @@ body {
     align-items: center;
     height: 100vh;
     margin: 0;
-    background-color: #f9e3e3;
-    font-family: 'Arial', sans-serif;
+    background-color: #0e1d29;
+    font-family: 'Courier New', monospace;
+    position: relative;
+    overflow: hidden;
+}
+
+.aquarium {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    background-color: #0e1d29;
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.2;
+    white-space: pre;
+    color: #ade6f7;
 }
 
 .container {
     text-align: center;
+    position: relative;
+    z-index: 10;
+    background: rgba(14, 29, 41, 0.7);
+    padding: 30px;
+    border-radius: 15px;
 }
 
 .header_text {
     font-size: 3em;
-    color: #d32f2f;
+    color: #ff7373;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .gif_container img {
     width: 100%; 
     max-width: 500px; 
     height: auto; 
+    border-radius: 10px;
 }

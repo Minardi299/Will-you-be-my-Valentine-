@@ -71,10 +71,25 @@ let messageIndex = 0;
 function handleNoClick() {
     const noButton = document.querySelector('.no-button');
     const yesButton = document.querySelector('.yes-button');
+    if (!noButton || !yesButton) return;
+
     noButton.textContent = messages[messageIndex];
     messageIndex = (messageIndex + 1) % messages.length;
     const currentSize = parseFloat(window.getComputedStyle(yesButton).fontSize);
     yesButton.style.fontSize = `${currentSize * 1.5}px`;
+
+    // Move the "No" button to a random location on screen (but keep it fully visible)
+    const rect = noButton.getBoundingClientRect();
+    const padding = 8;
+    const maxX = Math.max(padding, window.innerWidth - rect.width - padding);
+    const maxY = Math.max(padding, window.innerHeight - rect.height - padding);
+    const x = Math.random() * (maxX - padding) + padding;
+    const y = Math.random() * (maxY - padding) + padding;
+
+    noButton.style.position = 'fixed';
+    noButton.style.left = `${x}px`;
+    noButton.style.top = `${y}px`;
+    noButton.style.margin = '0';
 }
 
 function handleYesClick() {

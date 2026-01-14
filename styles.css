@@ -9,6 +9,7 @@ body {
     flex-direction: column;
     position: relative;
     overflow: hidden;
+    background-image: url("aquarium.gif");
   }
 
   .aquarium {
